@@ -3,79 +3,91 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common'; // Import CommonModule for *ngIf
 import { AuthService } from '../../services/auth.service';
-import { AuthStateService } from '../../services/auth-state.service';
-import { LoginRequest } from '../../interfaces/auth.interfaces';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css'],
-  standalone: true,
-  imports: [ReactiveFormsModule, CommonModule], // Add ReactiveFormsModule and CommonModule
+  standalone: true, // Mark the component as standalone
+  imports: [ReactiveFormsModule, CommonModule], // Add CommonModule here
 })
 export class LoginComponent implements OnDestroy {
   loginForm: FormGroup;
   isLoading = false;
-  errorMessage: string | null = null;
+  show2FAInput = false; // Afficher l'interface 2FA après la première étape
+  errorMessage: string | null = null; // Message d'erreur
+  usernameFor2FA: string | null = null; // Nom d'utilisateur pour la vérification 2FA
   private destroy$ = new Subject<void>();
 
   constructor(
-    private readonly fb: FormBuilder,
-    private readonly router: Router,
-    private readonly authService: AuthService,
-    private readonly authStateService: AuthStateService
+    private fb: FormBuilder,
+    private router: Router,
+    private authService: AuthService
   ) {
     this.loginForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(3)]], // Use 'username' instead of 'email'
-      password: ['', [Validators.required, Validators.minLength(6)]], // Password with validation
+      username: ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      code: [''] // Champ pour le code 2FA
     });
   }
 
   onSubmit(): void {
     if (this.loginForm.valid) {
       this.isLoading = true;
-      this.errorMessage = null;
-  
-      const loginRequest: LoginRequest = {
-        username: this.loginForm.value.username,
-        password: this.loginForm.value.password,
-      };
-  
-      this.authService.login(loginRequest)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (response) => {
-            console.log('Login successful:', response);
-            this.authStateService.setToken(response.token); // Store the token
-            this.loginForm.reset(); // Reset the form
-            this.router.navigate(['/home']); // Redirect to the home page
-          },
-          error: (error) => {
-            console.error('Login error:', error);
-            this.errorMessage = error.message || 'Login failed. Please check your credentials.'; // Display error message
-          },
-          complete: () => {
-            this.isLoading = false; // Reset loading state
-          },
-        });
+      const { username, password, code } = this.loginForm.value;
+
+      if (!this.show2FAInput) {
+        // Première étape : Vérifier les informations de connexion
+        this.authService.login(username, password)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (response) => {
+              console.log('2FA code sent:', response);
+              this.show2FAInput = true; // Afficher l'interface 2FA
+              this.usernameFor2FA = response.username; // Stocker le nom d'utilisateur pour la vérification 2FA
+              this.isLoading = false;
+              this.errorMessage = null; // Réinitialiser le message d'erreur
+            },
+            error: (error) => {
+              console.error('Login error:', error);
+              this.isLoading = false;
+              this.errorMessage = error; // Afficher le message d'erreur du backend
+            }
+          });
+      } else {
+        // Deuxième étape : Vérifier le code 2FA
+        this.authService.verify2FA(this.usernameFor2FA!, code)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (response) => {
+              console.log('Login successful:', response);
+              this.router.navigate(['/id-card-upload']); // Rediriger vers la page id-card-upload
+            },
+            error: (error) => {
+              console.error('2FA verification error:', error);
+              this.isLoading = false;
+              this.errorMessage = error; // Afficher le message d'erreur du backend
+            }
+          });
+      }
     } else {
       this.markFormGroupTouched(this.loginForm);
     }
   }
 
+  goToSignup(): void {
+    this.router.navigate(['/signup']);
+  }
+
   private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.values(formGroup.controls).forEach((control) => {
+    Object.values(formGroup.controls).forEach(control => {
       control.markAsTouched();
       if (control instanceof FormGroup) {
         this.markFormGroupTouched(control);
       }
     });
-  }
-
-  goToSignup(): void {
-    this.router.navigate(['/signup']);
   }
 
   ngOnDestroy(): void {

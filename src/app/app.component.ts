@@ -3,10 +3,10 @@ import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-root',
+  templateUrl: './app.component.html',
   standalone: true,
-  imports: [RouterModule], // Import RouterModule
-  template: `
-    <router-outlet></router-outlet> <!-- Render routed components here -->
-  `,
+  imports: [RouterModule]
 })
-export class AppComponent {}
+export class AppComponent {
+  title = 'taskwize';
+}

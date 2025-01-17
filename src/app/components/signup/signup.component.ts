@@ -5,50 +5,37 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
-import { SignupRequest } from '../../interfaces/auth.interfaces'; // Only import SignupRequest
 
 @Component({
   selector: 'app-signup',
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.css'],
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule], // Add ReactiveFormsModule and CommonModule
+  imports: [ReactiveFormsModule, CommonModule],
 })
 export class SignupComponent implements OnDestroy {
   signupForm: FormGroup;
   isLoading = false;
-  errorMessage: string | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
-    private readonly fb: FormBuilder,
-    private readonly router: Router,
-    private readonly authService: AuthService
+    private fb: FormBuilder,
+    private router: Router,
+    private authService: AuthService
   ) {
-    this.signupForm = this.fb.group(
-      {
-        username: ['', [Validators.required, Validators.minLength(3)]], // Username with validation
-        email: ['', [Validators.required, Validators.email]], // Email with validation
-        password: [
-          '',
-          [
-            Validators.required,
-            Validators.minLength(6),
-            Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/), // Password must contain uppercase, lowercase, and number
-          ],
-        ],
-        confirmPassword: ['', Validators.required], // Confirm password with validation
-      },
-      {
-        validator: this.passwordMatchValidator, // Custom validator to check if passwords match
-      }
-    );
+    this.signupForm = this.fb.group({
+      username: ['', [Validators.required, Validators.minLength(2)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', Validators.required],
+    }, {
+      validators: this.passwordMatchValidator,
+    });
   }
 
   private passwordMatchValidator(form: FormGroup): null | { passwordMismatch: true } {
     const password = form.get('password');
     const confirmPassword = form.get('confirmPassword');
-
     if (password && confirmPassword && password.value !== confirmPassword.value) {
       confirmPassword.setErrors({ passwordMismatch: true });
       return { passwordMismatch: true };
@@ -59,28 +46,24 @@ export class SignupComponent implements OnDestroy {
   onSubmit(): void {
     if (this.signupForm.valid) {
       this.isLoading = true;
-      this.errorMessage = null;
+      const { username, email, password } = this.signupForm.value;
 
-      const signupData: SignupRequest = {
-        username: this.signupForm.value.username,
-        email: this.signupForm.value.email,
-        password: this.signupForm.value.password,
-      };
-
-      this.authService.signup(signupData)
+      this.authService.signup(username, email, password)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: () => {
-            this.errorMessage = 'Signup successful!'; // Display success message
-            this.signupForm.reset(); // Clear all form fields
-            this.router.navigate(['/home']); // Redirect to home page
+          next: (response) => {
+            console.log('Signup successful:', response);
+            this.isLoading = false;
+            this.signupForm.reset();
+            this.router.navigate(['/login']); // Redirect to login after successful signup
           },
           error: (error) => {
             console.error('Signup error:', error);
-            this.errorMessage = error.message || ''; // Display error message
+            this.isLoading = false;
+            // Display user-friendly error message
           },
           complete: () => {
-            this.isLoading = false; // Reset loading state
+            this.isLoading = false;
           },
         });
     } else {
@@ -89,7 +72,7 @@ export class SignupComponent implements OnDestroy {
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.values(formGroup.controls).forEach((control) => {
+    Object.values(formGroup.controls).forEach(control => {
       control.markAsTouched();
       if (control instanceof FormGroup) {
         this.markFormGroupTouched(control);
@@ -98,7 +81,7 @@ export class SignupComponent implements OnDestroy {
   }
 
   goToLogin(): void {
-    this.router.navigate(['/login']); // Navigate to the login page
+    this.router.navigate(['/login']);
   }
 
   ngOnDestroy(): void {

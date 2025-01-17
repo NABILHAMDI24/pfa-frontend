@@ -1,0 +1,26 @@
+<div class="upload-container">
+  <h2>Télécharger une image de carte d'identité</h2>
+
+  <!-- Input pour sélectionner un fichier image -->
+  <input type="file" (change)="onFileSelected($event)" accept="image/*" />
+
+  <!-- Bouton pour déclencher l'extraction des données -->
+  <button (click)="onUpload()" [disabled]="isLoading">
+    {{ isLoading ? 'Traitement en cours...' : 'Générer les données CNIE' }}
+  </button>
+
+  <!-- Affichage des messages d'erreur -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Affichage des données CNIE extraites -->
+  <div *ngIf="cnieData" class="cnie-data">
+    <h3>Données CNIE extraites</h3>
+    <p><strong>Nom :</strong> {{ cnieData.name }}</p>
+    <p><strong>Prénom :</strong> {{ cnieData.surname }}</p>
+    <p><strong>Date de naissance :</strong> {{ cnieData.birthdate }}</p>
+    <p><strong>Numéro de carte :</strong> {{ cnieData.cardNumber }}</p>
+    <p><strong>Adresse :</strong> {{ cnieData.address }}</p>
+  </div>
+</div>

@@ -2,80 +2,94 @@
   <div class="login-content">
     <div class="login-left">
       <div class="brand-section">
-        <h1>Scannewize</h1>
-        <img src="assets/images/4.png" alt="Logo" class="logo" />
+        <h1>ScanneWize</h1>
+        <img src="assets/images/1.png" alt="Logo" class="logo">
       </div>
       <div class="welcome-text">
-        <h2>Welcome Back</h2>
-        <p>Log in to continue managing ur scanne</p>
+        <h2>Welcome Back!</h2>
+        <p>Manage your tasks efficiently with TaskWize</p>
       </div>
     </div>
-
+    
     <div class="login-right">
       <div class="login-card">
         <h2>Sign In</h2>
         <p class="subtitle">Please enter your credentials</p>
 
-        <!-- Display error message -->
-        <div *ngIf="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </div>
-
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <!-- Champ pour le nom d'utilisateur -->
           <div class="form-group">
             <label for="username">Username</label>
             <div class="input-with-icon">
               <i class="fas fa-user"></i>
-              <input
-                type="text"
-                id="username"
-                formControlName="username"
+              <input 
+                type="text" 
+                id="username" 
+                formControlName="username" 
                 placeholder="Enter your username"
-                [class.error]="loginForm.get('username')?.touched && loginForm.get('username')?.invalid"
-              />
+                [class.error]="loginForm.get('username')?.touched && loginForm.get('username')?.invalid">
             </div>
-            <div
-              class="error-message"
-              *ngIf="loginForm.get('username')?.touched && loginForm.get('username')?.invalid"
-            >
+            <div class="error-message" *ngIf="loginForm.get('username')?.touched && loginForm.get('username')?.invalid">
               <span *ngIf="loginForm.get('username')?.errors?.['required']">Username is required</span>
-              <span *ngIf="loginForm.get('username')?.errors?.['minlength']"
-                >Username must be at least 3 characters</span
-              >
             </div>
           </div>
 
+          <!-- Champ pour le mot de passe -->
           <div class="form-group">
             <label for="password">Password</label>
             <div class="input-with-icon">
               <i class="fas fa-lock"></i>
-              <input
-                type="password"
-                id="password"
-                formControlName="password"
+              <input 
+                type="password" 
+                id="password" 
+                formControlName="password" 
                 placeholder="Enter your password"
-                [class.error]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
-              />
+                [class.error]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
             </div>
-            <div
-              class="error-message"
-              *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
-            >
+            <div class="error-message" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
               <span *ngIf="loginForm.get('password')?.errors?.['required']">Password is required</span>
-              <span *ngIf="loginForm.get('password')?.errors?.['minlength']"
-                >Password must be at least 6 characters</span
-              >
+              <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters</span>
             </div>
           </div>
 
+          <!-- Interface 2FA (affichée après la première étape) -->
+          <div class="form-group" *ngIf="show2FAInput">
+            <label for="code">2FA Code</label>
+            <div class="input-with-icon">
+              <i class="fas fa-shield-alt"></i>
+              <input 
+                type="text" 
+                id="code" 
+                formControlName="code" 
+                placeholder="Enter your 2FA code"
+                [class.error]="loginForm.get('code')?.touched && loginForm.get('code')?.invalid">
+            </div>
+            <div class="error-message" *ngIf="loginForm.get('code')?.touched && loginForm.get('code')?.invalid">
+              <span *ngIf="loginForm.get('code')?.errors?.['required']">2FA code is required</span>
+            </div>
+          </div>
+
+          <!-- Message d'erreur global -->
+          <div class="error-message" *ngIf="errorMessage">
+            {{ errorMessage }}
+          </div>
+
+          <!-- Boutons d'action -->
           <div class="form-actions">
-            <button type="submit" class="btn-primary">
+            <button 
+              type="submit" 
+              class="btn-primary" 
+              [disabled]="loginForm.invalid || isLoading">
               <i class="fas fa-sign-in-alt"></i>
               <span *ngIf="!isLoading">Sign In</span>
-              <span *ngIf="isLoading">Signing In...</span>
+              <span *ngIf="isLoading">Signing in...</span>
             </button>
-            <button type="button" class="btn-secondary" (click)="goToSignup()">
-              Don't have an account? Sign Up
+            <button 
+              type="button" 
+              class="btn-secondary" 
+              (click)="goToSignup()" 
+              [disabled]="isLoading">
+              Create New Account
             </button>
           </div>
         </form>
